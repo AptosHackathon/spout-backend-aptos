@@ -1,98 +1,147 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Spout Backend Aptos
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based backend service for interacting with the Aptos blockchain network. This application provides real-time event polling and monitoring capabilities for Aptos accounts and transactions.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Features
 
-## Description
+- **Aptos Blockchain Integration**: Built-in connection to Aptos Devnet using the official Aptos TypeScript SDK
+- **Real-time Event Polling**: Automated polling service that monitors Aptos account events every 10 seconds
+- **Health Check Endpoint**: Monitor application and blockchain connection status
+- **Docker Support**: Ready-to-deploy Docker configuration with multi-stage builds
+- **TypeScript**: Full TypeScript support with proper type definitions
+- **Structured Logging**: Comprehensive logging with NestJS Logger
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🏗️ Architecture
 
-## Project setup
+The application follows a modular NestJS architecture with the following core modules:
 
+### Core Modules
+
+- **AppModule**: Main application module that orchestrates all other modules
+- **Web3Module**: Handles Aptos blockchain interactions and client management
+- **PollingModule**: Manages automated event polling and monitoring
+
+### Services
+
+- **Web3Service**: Core service for Aptos blockchain operations
+  - Account information retrieval
+  - Event fetching from transactions
+  - Network connectivity monitoring
+  
+- **PollingService**: Scheduled service for continuous event monitoring
+  - Runs every 10 seconds using cron jobs
+  - Monitors specified Aptos accounts for new events
+  - Extensible for custom event processing logic
+
+## 📡 API Endpoints
+
+### Health Check
+- **GET** `/health`
+  - Returns application status and Aptos network connectivity
+  - Response includes network configuration and connection status
+
+### Default
+- **GET** `/`
+  - Returns basic "Hello World" message
+  - Useful for testing application availability
+
+## 📋 Prerequisites
+
+- Node.js 22.15.0 or higher
+- npm or yarn package manager
+- Docker (optional, for containerized deployment)
+
+## 🛠️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd spout-backend-aptos
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   The application uses Aptos Devnet by default. No additional environment configuration is required for basic usage.
+
+## 🚀 Running the Application
+
+### Development Mode
 ```bash
-$ npm install
+# Start in development mode with hot reload
+npm run start:dev
+
+# Start in debug mode
+npm run start:debug
 ```
 
-## Compile and run the project
-
+### Production Mode
 ```bash
-# development
-$ npm run start
+# Build the application
+npm run build
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Start in production mode
+npm start:prod
 ```
 
-## Run tests
-
+### Docker Deployment
 ```bash
-# unit tests
-$ npm run test
+# Build and run with Docker Compose
+docker-compose up --build
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Run in detached mode
+docker-compose up -d
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 🧪 Testing
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Run unit tests
+npm run test
+
+# Run tests with coverage
+npm run test:cov
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run end-to-end tests
+npm run test:e2e
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 📦 Dependencies
 
-## Resources
+### Core Dependencies
+- **@nestjs/core**: NestJS framework core
+- **@nestjs/schedule**: Cron job and task scheduling
+- **@aptos-labs/ts-sdk**: Official Aptos TypeScript SDK
+- **reflect-metadata**: Metadata reflection API
+- **rxjs**: Reactive extensions for JavaScript
 
-Check out a few resources that may come in handy when working with NestJS:
+### Development Dependencies
+- **TypeScript**: Type-safe JavaScript development
+- **Jest**: Testing framework
+- **ESLint**: Code linting and formatting
+- **Prettier**: Code formatting
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🔧 Configuration
 
-## Support
+### Aptos Network
+The application is currently configured for Aptos Devnet. To change the network:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+1. Modify the `Web3Service` constructor in `src/web3/web3.service.ts`
+2. Update the `AptosConfig` network parameter:
+   ```typescript
+   const config = new AptosConfig({ network: Network.MAINNET }); // or Network.TESTNET
+   ```
 
-## Stay in touch
+### Polling Configuration
+The polling service runs every 10 seconds by default. To modify:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+1. Edit the `@Cron` decorator in `src/polling/polling.service.ts`
+2. Use different `CronExpression` values or custom cron patterns
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Note**: This application is configured for Aptos Devnet. Ensure you have proper configuration and security measures in place before deploying to production networks.
