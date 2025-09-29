@@ -58,9 +58,6 @@ test
 .eslintrc.js
 eslint.config.mjs
 jest.config.js
-tsconfig.json
-tsconfig.build.json
-nest-cli.json
 
 # Example files
 src/example-usage.ts

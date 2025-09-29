@@ -1,0 +1,14 @@
+version: '3'
+services:
+  app:
+    image: lbadlani/js-engine-tee:app-v9 (image name)
+    ports:
+      - 8080:8888
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    environment:
+      - GRANT_SUDO=yes
+      - NODE_ENV=production
+      - PORT=8888
+    user: root
+    restart: always
