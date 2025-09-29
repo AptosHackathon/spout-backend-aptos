@@ -1,14 +1,14 @@
-version: '3'
 services:
   app:
-    image: lbadlani/js-engine-tee:app-v9 (image name)
+    image: lbadlani/spout-backend-aptos:v1 
+    container_name: app
     ports:
-      - 8080:8888
+      - "3000:3000"
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
     environment:
       - GRANT_SUDO=yes
       - NODE_ENV=production
-      - PORT=8888
+      - PORT=3000
     user: root
     restart: always

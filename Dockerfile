@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for NestJS Aptos Backend
 
 # Stage 1: Build
-FROM node:22.15.0 as build
+FROM node:22.15.0-slim AS build
 WORKDIR /app
 
 # Copy package files
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production
-FROM node:22.15.0 as production
+FROM node:22.15.0-slim AS production
 WORKDIR /app
 
 # Copy production dependencies from build stage
