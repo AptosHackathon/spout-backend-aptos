@@ -49,7 +49,6 @@ export class PollingService implements OnModuleInit {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async pollForEvents(): Promise<void> {
     this.logger.log('Polling for new order events started');
-    
     try {
       // Get recent events filtered by event types
       const orderEvents = await this.web3Service.getEventsByType(
@@ -60,25 +59,28 @@ export class PollingService implements OnModuleInit {
         }
       );
 
-      if (orderEvents.length > 0) {
-        this.logger.log(`Found ${orderEvents.length} order events`);
-        
-        // Process each order event
-        for (const event of orderEvents) {
-          if (event.type === this.BUY_ORDER_EVENT_TYPE) {
-            await this.processBuyOrderEvent(event.data as BuyOrderCreated);
-          } else if (event.type === this.SELL_ORDER_EVENT_TYPE) {
-            await this.processSellOrderEvent(event.data as SellOrderCreated);
-          }
+      // Count events by type
+      let buyOrderCount = 0;
+      let sellOrderCount = 0;
+
+      // Process each order event
+      for (const event of orderEvents) {
+        if (event.type === this.BUY_ORDER_EVENT_TYPE) {
+          buyOrderCount++;
+          await this.processBuyOrderEvent(event.data as BuyOrderCreated);
+        } else if (event.type === this.SELL_ORDER_EVENT_TYPE) {
+          sellOrderCount++;
+          await this.processSellOrderEvent(event.data as SellOrderCreated);
         }
-      } else {
-        this.logger.log('No order events found');
       }
+
+      // Log event counts
+      this.logger.log(`buy order events: ${buyOrderCount}`);
+      this.logger.log(`sell order events: ${sellOrderCount}`);
     } catch (error) {
       this.logger.error('Error during order event polling:', error);
     }
-    
-    this.logger.log('Polling for new order events finished');
+    this.logger.log('Polling for new order events completed');
   }
 
   /**
