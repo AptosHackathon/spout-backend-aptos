@@ -91,6 +91,32 @@ export class Web3Service {
   }
 
   /**
+   * Get events by specific event types from an account
+   */
+  async getEventsByType(
+    accountAddress: string,
+    eventTypes: string[],
+    options?: {
+      start?: number;
+      limit?: number;
+    }
+  ): Promise<AptosEventData[]> {
+    try {
+      const allEvents = await this.getAccountEvents(accountAddress, options);
+      
+      // Filter events by the specified types
+      const filteredEvents = allEvents.filter(event => 
+        eventTypes.includes(event.type)
+      );
+
+      return filteredEvents;
+    } catch (error) {
+      this.logger.error(`Failed to get events by type for ${accountAddress}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get network configuration
    */
   getNetworkConfig(): string {
