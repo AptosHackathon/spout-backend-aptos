@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Web3Service } from '../web3/web3.service';
+import { SupabaseService, OrderBookEntry } from '../supabase/supabase.service';
 
 interface BuyOrderCreated {
   user: string;
@@ -37,15 +38,30 @@ export class PollingService implements OnModuleInit {
   private readonly BUY_ORDER_EVENT_TYPE = `${this.ORDER_CONTRACT_ADDRESS}::orders::BuyOrderCreated`;
   private readonly SELL_ORDER_EVENT_TYPE = `${this.ORDER_CONTRACT_ADDRESS}::orders::SellOrderCreated`;
 
-  constructor(private readonly web3Service: Web3Service) {}
+  constructor(
+    private readonly web3Service: Web3Service,
+    private readonly supabaseService: SupabaseService
+  ) {}
 
   async onModuleInit() {
-    // Check connection on module initialization
-    const isConnected = await this.web3Service.isConnected();
-    if (isConnected) {
-      this.logger.log('Connected to Aptos network, polling service ready');
+    // Check connections on module initialization
+    const isWeb3Connected = await this.web3Service.isConnected();
+    const isDbConnected = await this.supabaseService.testConnection();
+    
+    if (isWeb3Connected) {
+      this.logger.log('Connected to Aptos network');
     } else {
       this.logger.error('Failed to connect to Aptos network');
+    }
+
+    if (isDbConnected) {
+      this.logger.log('Connected to Supabase database');
+    } else {
+      this.logger.error('Failed to connect to Supabase database');
+    }
+
+    if (isWeb3Connected && isDbConnected) {
+      this.logger.log('Polling service ready');
     }
   }
 
@@ -98,7 +114,7 @@ export class PollingService implements OnModuleInit {
     const formattedUsdcAmount = this.formatAmount(eventData.usdc_amount, 6); // USDC has 6 decimals
     const formattedAssetAmount = this.formatAmount(eventData.asset_amount, 18); // Assuming 18 decimals for asset
     const oracleTimestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
-    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : 'Unknown';
+    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : new Date().toISOString();
     
     this.logger.log('🟢 BUY ORDER CREATED:');
     this.logger.log(`  User: ${eventData.user}`);
@@ -109,12 +125,27 @@ export class PollingService implements OnModuleInit {
     this.logger.log(`  Oracle Timestamp: ${oracleTimestamp}`);
     this.logger.log(`  Event Timestamp: ${eventTimestamp}`);
     
-    // Add your custom business logic here
-    // For example:
-    // - Store in database
-    // - Send notifications
-    // - Update user balances
-    // - Trigger other services
+    // Prepare order data for database insertion
+    const orderBookEntry: OrderBookEntry = {
+      order_type: 'BUY',
+      user_address: eventData.user,
+      ticker: ticker,
+      usdc_amount_formatted: parseFloat(formattedUsdcAmount),
+      asset_amount: eventData.asset_amount, // Keep original big number as string
+      asset_amount_formatted: parseFloat(formattedAssetAmount),
+      price: eventData.price, // Keep original big number as string
+      price_formatted: parseFloat(formattedPrice),
+      oracle_timestamp: oracleTimestamp,
+      event_timestamp: eventTimestamp,
+    };
+
+    // Insert into database
+    try {
+      await this.supabaseService.insertOrderBook(orderBookEntry);
+      this.logger.log(`✅ BUY order saved to database`);
+    } catch (error) {
+      this.logger.warn(`⚠️ Failed to save BUY order to database - continuing without persistence`);
+    }
   }
 
   /**
@@ -126,7 +157,7 @@ export class PollingService implements OnModuleInit {
     const formattedUsdcAmount = this.formatAmount(eventData.usdc_amount, 6); // USDC has 6 decimals
     const formattedAssetAmount = this.formatAmount(eventData.asset_amount, 18); // Assuming 18 decimals for asset
     const oracleTimestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
-    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : 'Unknown';
+    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : new Date().toISOString();
     
     this.logger.log('🔴 SELL ORDER CREATED:');
     this.logger.log(`  User: ${eventData.user}`);
@@ -137,12 +168,27 @@ export class PollingService implements OnModuleInit {
     this.logger.log(`  Oracle Timestamp: ${oracleTimestamp}`);
     this.logger.log(`  Event Timestamp: ${eventTimestamp}`);
     
-    // Add your custom business logic here
-    // For example:
-    // - Store in database
-    // - Send notifications
-    // - Update user balances
-    // - Trigger other services
+    // Prepare order data for database insertion
+    const orderBookEntry: OrderBookEntry = {
+      order_type: 'SELL',
+      user_address: eventData.user,
+      ticker: ticker,
+      usdc_amount_formatted: parseFloat(formattedUsdcAmount),
+      asset_amount: eventData.asset_amount, // Keep original big number as string
+      asset_amount_formatted: parseFloat(formattedAssetAmount),
+      price: eventData.price, // Keep original big number as string
+      price_formatted: parseFloat(formattedPrice),
+      oracle_timestamp: oracleTimestamp,
+      event_timestamp: eventTimestamp,
+    };
+
+    // Insert into database
+    try {
+      await this.supabaseService.insertOrderBook(orderBookEntry);
+      this.logger.log(`✅ SELL order saved to database`);
+    } catch (error) {
+      this.logger.warn(`⚠️ Failed to save SELL order to database - continuing without persistence`);
+    }
   }
 
   /**
