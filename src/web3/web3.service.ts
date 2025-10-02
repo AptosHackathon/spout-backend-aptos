@@ -18,11 +18,11 @@ export class Web3Service {
   private readonly aptos: Aptos;
 
   constructor() {
-    // Initialize Aptos client with devnet configuration
-    const config = new AptosConfig({ network: Network.DEVNET });
+    // Initialize Aptos client with testnet configuration
+    const config = new AptosConfig({ network: Network.TESTNET });
     this.aptos = new Aptos(config);
-    
-    this.logger.log('Aptos client initialized for devnet');
+
+    this.logger.log('Aptos client initialized for testnet');
   }
 
   /**
@@ -40,9 +40,20 @@ export class Web3Service {
       const account = await this.aptos.getAccountInfo({
         accountAddress,
       });
+      
+      this.logger.log(`✅ Account found:`);
+      this.logger.log(`  - Sequence Number: ${account.sequence_number}`);
+      this.logger.log(`  - Authentication Key: ${account.authentication_key}`);
+      
       return account;
     } catch (error) {
-      this.logger.error(`Failed to get account info for ${accountAddress}:`, error);
+      this.logger.error(`❌ Failed to get account info for ${accountAddress}:`, error.message);
+      
+      // Check if it's a "account not found" error
+      if (error.message && error.message.includes('not found')) {
+        this.logger.error(`🚨 Account ${accountAddress} does not exist on the network`);
+      }
+      
       throw error;
     }
   }
@@ -65,6 +76,8 @@ export class Web3Service {
           limit: options?.limit || 25,
         },
       });
+
+      this.logger.log(`📦 Found ${transactions.length} transactions for ${accountAddress}`);
 
       const events: AptosEventData[] = [];
 
@@ -105,7 +118,11 @@ export class Web3Service {
     }
   ): Promise<AptosEventData[]> {
     try {
+      this.logger.log(`🔎 Filtering events by types: ${eventTypes.join(', ')}`);
+      
       const allEvents = await this.getAccountEvents(accountAddress, options);
+      
+      this.logger.log(`📊 All events count before filtering: ${allEvents.length}`);
       
       // Filter events by the specified types
       const filteredEvents = allEvents.filter(event => 
@@ -123,7 +140,7 @@ export class Web3Service {
    * Get network configuration
    */
   getNetworkConfig(): string {
-    return Network.DEVNET;
+    return Network.TESTNET;
   }
 
   /**

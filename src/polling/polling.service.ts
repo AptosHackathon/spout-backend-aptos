@@ -72,14 +72,24 @@ export class PollingService implements OnModuleInit {
   async pollForEvents(): Promise<void> {
     this.logger.log('Polling for new order events started');
     try {
-      // Get recent events filtered by event types
+      // First, let's verify the contract account exists
+      this.logger.log(`🔍 Checking contract account: ${this.ORDER_CONTRACT_ADDRESS}`);
+      
+      try {
+        await this.web3Service.getAccountInfo(this.ORDER_CONTRACT_ADDRESS);
+      } catch (accountError) {
+        this.logger.error(`❌ Contract account verification failed:`, accountError.message);
+        return;
+      }
       const orderEvents = await this.web3Service.getEventsByType(
         this.ORDER_CONTRACT_ADDRESS,
         [this.BUY_ORDER_EVENT_TYPE, this.SELL_ORDER_EVENT_TYPE],
         {
-          limit: 10, // Increased limit to catch more events
+          limit: 25, // Get more transactions if available
         }
       );
+
+      this.logger.log(`📊 Found ${orderEvents.length} order events from account transactions`);
 
       // Count events by type
       let buyOrderCount = 0;
