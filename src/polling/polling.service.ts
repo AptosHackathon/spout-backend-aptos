@@ -20,6 +20,12 @@ interface SellOrderCreated {
   oracle_ts: string;
 }
 
+interface EventWithTimestamp {
+  data: BuyOrderCreated | SellOrderCreated;
+  type: string;
+  timestamp?: string;
+}
+
 @Injectable()
 export class PollingService implements OnModuleInit {
   private readonly logger = new Logger(PollingService.name);
@@ -67,10 +73,10 @@ export class PollingService implements OnModuleInit {
       for (const event of orderEvents) {
         if (event.type === this.BUY_ORDER_EVENT_TYPE) {
           buyOrderCount++;
-          await this.processBuyOrderEvent(event.data as BuyOrderCreated);
+          await this.processBuyOrderEvent(event.data as BuyOrderCreated, event.timestamp);
         } else if (event.type === this.SELL_ORDER_EVENT_TYPE) {
           sellOrderCount++;
-          await this.processSellOrderEvent(event.data as SellOrderCreated);
+          await this.processSellOrderEvent(event.data as SellOrderCreated, event.timestamp);
         }
       }
 
@@ -86,12 +92,13 @@ export class PollingService implements OnModuleInit {
   /**
    * Process BuyOrderCreated event
    */
-  private async processBuyOrderEvent(eventData: BuyOrderCreated): Promise<void> {
+  private async processBuyOrderEvent(eventData: BuyOrderCreated, blockchainTimestamp?: string): Promise<void> {
     const ticker = this.parseTickerFromBytes(eventData.ticker);
     const formattedPrice = this.formatPrice(eventData.price);
     const formattedUsdcAmount = this.formatAmount(eventData.usdc_amount, 6); // USDC has 6 decimals
     const formattedAssetAmount = this.formatAmount(eventData.asset_amount, 18); // Assuming 18 decimals for asset
-    const timestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
+    const oracleTimestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
+    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : 'Unknown';
     
     this.logger.log('🟢 BUY ORDER CREATED:');
     this.logger.log(`  User: ${eventData.user}`);
@@ -99,7 +106,8 @@ export class PollingService implements OnModuleInit {
     this.logger.log(`  USDC Amount: ${formattedUsdcAmount} USDC`);
     this.logger.log(`  Asset Amount: ${formattedAssetAmount} ${ticker}`);
     this.logger.log(`  Price: $${formattedPrice}`);
-    this.logger.log(`  Oracle Timestamp: ${timestamp}`);
+    this.logger.log(`  Oracle Timestamp: ${oracleTimestamp}`);
+    this.logger.log(`  Event Timestamp: ${eventTimestamp}`);
     
     // Add your custom business logic here
     // For example:
@@ -112,12 +120,13 @@ export class PollingService implements OnModuleInit {
   /**
    * Process SellOrderCreated event
    */
-  private async processSellOrderEvent(eventData: SellOrderCreated): Promise<void> {
+  private async processSellOrderEvent(eventData: SellOrderCreated, blockchainTimestamp?: string): Promise<void> {
     const ticker = this.parseTickerFromBytes(eventData.ticker);
     const formattedPrice = this.formatPrice(eventData.price);
     const formattedUsdcAmount = this.formatAmount(eventData.usdc_amount, 6); // USDC has 6 decimals
     const formattedAssetAmount = this.formatAmount(eventData.asset_amount, 18); // Assuming 18 decimals for asset
-    const timestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
+    const oracleTimestamp = new Date(parseInt(eventData.oracle_ts) * 1000).toISOString();
+    const eventTimestamp = blockchainTimestamp ? new Date(parseInt(blockchainTimestamp) / 1000).toISOString() : 'Unknown';
     
     this.logger.log('🔴 SELL ORDER CREATED:');
     this.logger.log(`  User: ${eventData.user}`);
@@ -125,7 +134,8 @@ export class PollingService implements OnModuleInit {
     this.logger.log(`  USDC Amount: ${formattedUsdcAmount} USDC`);
     this.logger.log(`  Asset Amount: ${formattedAssetAmount} ${ticker}`);
     this.logger.log(`  Price: $${formattedPrice}`);
-    this.logger.log(`  Oracle Timestamp: ${timestamp}`);
+    this.logger.log(`  Oracle Timestamp: ${oracleTimestamp}`);
+    this.logger.log(`  Event Timestamp: ${eventTimestamp}`);
     
     // Add your custom business logic here
     // For example:

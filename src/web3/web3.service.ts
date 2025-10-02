@@ -9,6 +9,7 @@ export interface AptosEventData {
   };
   sequence_number: string;
   data: any;
+  timestamp?: string; // Transaction timestamp from blockchain
 }
 
 @Injectable()
@@ -70,6 +71,7 @@ export class Web3Service {
       for (const transaction of transactions) {
         // Type guard to check if transaction has events (committed transactions only)
         if ('events' in transaction && transaction.events) {
+          const transactionTimestamp = 'timestamp' in transaction ? transaction.timestamp || '' : '';
           const transactionEvents = transaction.events.map((event: any) => ({
             type: event.type,
             guid: {
@@ -78,6 +80,7 @@ export class Web3Service {
             },
             sequence_number: event.sequence_number?.toString() || '0',
             data: event.data,
+            timestamp: transactionTimestamp,
           }));
           events.push(...transactionEvents);
         }
