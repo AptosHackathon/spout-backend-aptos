@@ -95,10 +95,11 @@ export class MintburnService {
         payload: {
           function: `${this.CONTRACT_ADDRESS}::${this.KYC_MODULE_NAME}::is_verified`,
           typeArguments: [],
-          functionArguments: [this.CONTRACT_ADDRESS, userAddress]
+          functionArguments: ['0xc50c45c8cf451cf262827f258bba2254c94487311c326fa097ce30c39beda4ea', userAddress]
         }
       });
 
+      this.logger.log(`KYC verification response for ${userAddress}: ${JSON.stringify(result)}`);
       const isVerified = result[0] as boolean;
       
       this.logger.log(`KYC verification status for ${userAddress}: ${isVerified}`);
@@ -121,8 +122,10 @@ export class MintburnService {
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.KYC_MODULE_NAME}::set_verified`,
         typeArguments: [],
-        functionArguments: [userAddress, isVerified]
+        functionArguments: [userAddress, true]
       };
+
+      this.logger.log(`Set verification payload: ${JSON.stringify(payload, null, 2)}`);
 
       const transaction = await this.aptos.transaction.build.simple({
         sender: this.account.accountAddress,
