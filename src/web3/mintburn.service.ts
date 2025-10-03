@@ -36,6 +36,7 @@ export class MintburnService {
   // Contract configuration
   private readonly CONTRACT_ADDRESS = process.env.MODULE_PUBLISHER_ACCOUNT_ADDRESS || '';
   private readonly MODULE_NAME = 'SpoutToken';
+  private readonly KYC_MODULE_NAME = 'kyc_registry';
   
   // Module publisher account private key from environment variables
   private readonly ADMIN_PRIVATE_KEY = process.env.MODULE_PUBLISHER_ACCOUNT_PRIVATE_KEY || '';
@@ -85,13 +86,99 @@ export class MintburnService {
   }
 
   /**
+   * Check if a user is KYC verified
+   */
+  async isUserVerified(userAddress: string): Promise<boolean> {
+    try {
+      const result = await this.aptos.view({
+        payload: {
+          function: `${this.CONTRACT_ADDRESS}::${this.KYC_MODULE_NAME}::is_verified`,
+          typeArguments: [],
+          functionArguments: [this.CONTRACT_ADDRESS, userAddress]
+        }
+      });
+
+      const isVerified = result[0] as boolean;
+      
+      this.logger.log(`KYC verification status for ${userAddress}: ${isVerified}`);
+      return isVerified;
+
+    } catch (error) {
+      this.logger.error(`Error checking KYC verification for user ${userAddress}:`, error);
+      // Default to false if there's an error checking verification status
+      return false;
+    }
+  }
+
+  /**
+   * Set KYC verification status for a user (Admin only)
+   */
+  async setUserVerification(userAddress: string, isVerified: boolean): Promise<TransactionResult> {
+    try {
+
+      const payload: InputEntryFunctionData = {
+        function: `${this.CONTRACT_ADDRESS}::${this.KYC_MODULE_NAME}::set_verified`,
+        typeArguments: [],
+        functionArguments: [userAddress, isVerified]
+      };
+
+      const transaction = await this.aptos.transaction.build.simple({
+        sender: this.account.accountAddress,
+        data: payload
+      });
+
+      const committedTransaction = await this.aptos.signAndSubmitTransaction({
+        signer: this.account,
+        transaction
+      });
+
+      const executedTransaction = await this.aptos.waitForTransaction({
+        transactionHash: committedTransaction.hash
+      });
+
+      return {
+        hash: committedTransaction.hash,
+        success: executedTransaction.success,
+        gasUsed: executedTransaction.gas_used
+      };
+
+    } catch (error) {
+      this.logger.error(`Error setting KYC verification for user ${userAddress}:`, error);
+      return {
+        hash: '',
+        success: false,
+        errorMessage: error.message
+      };
+    }
+  }
+
+
+
+  /**
    * Mint tokens to a recipient
    */
   async mintTokens(operation: TokenOperation): Promise<TransactionResult> {
     try {
+      // Check if user is KYC verified before minting
+      const isVerified = await this.isUserVerified(operation.recipient);
+      if (!isVerified) {        
+        // Auto-verify the user
+        const verificationResult = await this.setUserVerification(operation.recipient, true);
+        if (!verificationResult.success) {
+          this.logger.error(`Failed to auto-verify user ${operation.recipient}. Cannot mint tokens.`);
+          return {
+            hash: '',
+            success: false,
+            errorMessage: `Failed to auto-verify user ${operation.recipient}. Minting operation rejected: ${verificationResult.errorMessage}`
+          };
+        }
+        
+        this.logger.log(`Successfully auto-verified user ${operation.recipient}. TX: ${verificationResult.hash}`);
+      }
+
       // Hardcoded to mint 1 token to avoid supply limit issues
       const hardcodedAmount = 1;
-      this.logger.log(`Minting ${hardcodedAmount} ${operation.tokenType} tokens to ${operation.recipient} (original amount: ${operation.amount})`);
+      this.logger.log(`User ${operation.recipient} is KYC verified. Minting ${hardcodedAmount} ${operation.tokenType} tokens (original amount: ${operation.amount})`);
 
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::mint`,
@@ -134,7 +221,25 @@ export class MintburnService {
    */
   async adminBurnTokens(operation: BurnOperation): Promise<TransactionResult> {
     try {
-      this.logger.log(`Admin burning ${operation.amount} ${operation.tokenType} tokens from ${operation.user}`);
+      // Check if user is KYC verified before burning
+      const isVerified = await this.isUserVerified(operation.user);
+      if (!isVerified) {
+        
+        // Auto-verify the user
+        const verificationResult = await this.setUserVerification(operation.user, true);
+        if (!verificationResult.success) {
+          this.logger.error(`Failed to auto-verify user ${operation.user}. Cannot burn tokens.`);
+          return {
+            hash: '',
+            success: false,
+            errorMessage: `Failed to auto-verify user ${operation.user}. Burning operation rejected: ${verificationResult.errorMessage}`
+          };
+        }
+        
+        this.logger.log(`Successfully auto-verified user ${operation.user}. TX: ${verificationResult.hash}`);
+      }
+
+      this.logger.log(`User ${operation.user} is KYC verified. Admin burning ${operation.amount} ${operation.tokenType} tokens`);
 
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::admin_burn_from`,

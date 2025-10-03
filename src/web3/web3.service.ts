@@ -142,15 +142,31 @@ export class Web3Service {
    * Format raw order event data into a structured format
    */
   private formatOrderEvent(rawEvent: RawOrderEvent, eventType: 'BuyOrderCreated' | 'SellOrderCreated'): FormattedOrderEvent {
+    // Adjust price to 6 decimals
+    const adjustedPrice = parseInt(rawEvent.data.price) / Math.pow(10, 6);
+    
+    let usdcAmount: number;
+    let assetAmount: number;
+    
+    if (eventType === 'BuyOrderCreated') {
+      // For buy orders: assetAmount = usdcAmount/price (post decimal adjustment)
+      usdcAmount = parseInt(rawEvent.data.usdc_amount);
+      assetAmount = usdcAmount / adjustedPrice;
+    } else {
+      // For sell orders: usdcAmount = assetAmount * price (post decimal adjustment)  
+      assetAmount = parseInt(rawEvent.data.asset_amount);
+      usdcAmount = assetAmount * adjustedPrice;
+    }
+    
     return {
       version: rawEvent.version,
       sequenceNumber: rawEvent.sequence_number,
       eventType,
       user: rawEvent.data.user,
       ticker: this.formatTicker(rawEvent.data.ticker),
-      usdcAmount: parseInt(rawEvent.data.usdc_amount),
-      assetAmount: parseInt(rawEvent.data.asset_amount),
-      price: parseInt(rawEvent.data.price),
+      usdcAmount,
+      assetAmount,
+      price: adjustedPrice,
     };
   }
 
