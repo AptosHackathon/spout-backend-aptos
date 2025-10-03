@@ -42,7 +42,7 @@ export class PollingService implements OnModuleInit {
   /**
    * Cron job that runs every 10 seconds to poll for new events
    */
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async pollForEvents(): Promise<void> {
     this.logger.log('-------------------------');
     this.logger.log('Polling for new order events started');
@@ -202,7 +202,8 @@ export class PollingService implements OnModuleInit {
             this.logger.error(`Failed to mint ${event.assetAmount} ${tokenType} tokens to ${event.user}: ${result.errorMessage}`);
           }
 
-        } else if (event.eventType === 'SellOrderCreated') {
+        } 
+        else if (event.eventType === 'SellOrderCreated') {
           // Sell order = burn tokens from user
           const burnOperation: BurnOperation = {
             tokenType: tokenType,
