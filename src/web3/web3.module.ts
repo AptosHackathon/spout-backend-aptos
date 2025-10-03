@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { Web3Service } from './web3.service';
+import { MintburnService } from './mintburn.service';
 
 @Module({
-  providers: [Web3Service],
+  providers: [Web3Service, MintburnService],
   exports: [Web3Service],
 })
 export class Web3Module {}
