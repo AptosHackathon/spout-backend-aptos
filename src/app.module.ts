@@ -11,7 +11,8 @@ import { SupabaseModule } from './supabase/supabase.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // Makes the config available globally
-      envFilePath: '.env', // Specify the path to your .env file
+      envFilePath: process.env.NODE_ENV === 'production' ? undefined : '.env', // Use .env only in local
+      ignoreEnvFile: process.env.NODE_ENV === 'production', // Ignore .env file in production
     }),
     ScheduleModule.forRoot(),
     Web3Module,
