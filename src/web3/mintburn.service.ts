@@ -203,6 +203,8 @@ export class MintburnService {
         functionArguments: [operation.recipient, tokenAmount]
       };
 
+      this.logger.log(`Mint payload: ${JSON.stringify(payload, null, 2)}`);
+
       const transaction = await this.aptos.transaction.build.simple({
         sender: this.account.accountAddress,
         data: payload
@@ -266,6 +268,8 @@ export class MintburnService {
         typeArguments: [`${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::${operation.tokenType}`],
         functionArguments: [operation.user, tokenAmount]
       };
+
+      this.logger.log(`Burn payload: ${JSON.stringify(payload, null, 2)}`);
 
       const transaction = await this.aptos.transaction.build.simple({
         sender: this.account.accountAddress,
