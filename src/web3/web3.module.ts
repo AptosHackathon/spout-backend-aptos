@@ -4,6 +4,6 @@ import { MintburnService } from './mintburn.service';
 
 @Module({
   providers: [Web3Service, MintburnService],
-  exports: [Web3Service],
+  exports: [Web3Service, MintburnService],
 })
 export class Web3Module {}
