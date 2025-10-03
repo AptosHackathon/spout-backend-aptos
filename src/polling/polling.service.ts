@@ -42,7 +42,7 @@ export class PollingService implements OnModuleInit {
   /**
    * Cron job that runs every 10 seconds to poll for new events
    */
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async pollForEvents(): Promise<void> {
     this.logger.log('-------------------------');
     this.logger.log('Polling for new order events started');
