@@ -9,13 +9,13 @@ import {
 } from '@aptos-labs/ts-sdk';
 
 export interface TokenOperation {
-  tokenType: 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD';
+  tokenType: 'LQD_NEW' | 'USDT_NEW' | 'USDC_NEW';
   recipient: string;
   amount: number;
 }
 
 export interface BurnOperation {
-  tokenType: 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD';
+  tokenType: 'LQD_NEW' | 'USDT_NEW' | 'USDC_NEW';
   user: string;
   amount: number;
 }
@@ -40,9 +40,6 @@ export class MintburnService {
   
   // Module publisher account private key from environment variables
   private readonly ADMIN_PRIVATE_KEY = process.env.MODULE_PUBLISHER_ACCOUNT_PRIVATE_KEY || '';
-
-  // Token decimals configuration - most tokens use 8 decimals
-  private readonly TOKEN_DECIMALS = 8;
 
   constructor() {
     // Validate environment variables
@@ -71,17 +68,6 @@ export class MintburnService {
     this.logger.log('MintBurn service initialized for testnet');
   }
 
-  /**
-   * Convert decimal token amount to integer format required by blockchain
-   * @param amount - The decimal amount (e.g., 8.953353030710002)
-   * @returns Integer amount in smallest unit (e.g., 895335303)
-   */
-  private convertToTokenUnits(amount: number): string {
-    // Convert to the smallest unit by multiplying with 10^decimals
-    const multiplier = Math.pow(10, this.TOKEN_DECIMALS);
-    const integerAmount = Math.floor(amount * multiplier);
-    return integerAmount.toString();
-  }
 
   /**
    * Check if the service is connected and admin account is funded
@@ -194,13 +180,11 @@ export class MintburnService {
 
       this.logger.log(`User ${operation.recipient} is KYC verified. Minting ${operation.amount} ${operation.tokenType} tokens`);
 
-      // Convert decimal amount to integer format required by blockchain
-      const tokenAmount = this.convertToTokenUnits(operation.amount);
       
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::mint`,
         typeArguments: [`${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::${operation.tokenType}`],
-        functionArguments: [operation.recipient, tokenAmount]
+        functionArguments: [operation.recipient, operation.amount]
       };
 
       this.logger.log(`Mint payload: ${JSON.stringify(payload, null, 2)}`);
@@ -260,13 +244,10 @@ export class MintburnService {
 
       this.logger.log(`User ${operation.user} is KYC verified. Admin burning ${operation.amount} ${operation.tokenType} tokens`);
 
-      // Convert decimal amount to integer format required by blockchain
-      const tokenAmount = this.convertToTokenUnits(operation.amount);
-      
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::admin_burn_from`,
         typeArguments: [`${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::${operation.tokenType}`],
-        functionArguments: [operation.user, tokenAmount]
+        functionArguments: [operation.user, operation.amount]
       };
 
       this.logger.log(`Burn payload: ${JSON.stringify(payload, null, 2)}`);

@@ -9,7 +9,7 @@ export class PollingService implements OnModuleInit {
   private readonly logger = new Logger(PollingService.name);
   
   // Order contract address
-  private readonly ORDER_CONTRACT_ADDRESS = '0x55816489757de1d92999dad0629734b877a22455a7fe05e1de36645389646ceb';
+  private readonly ORDER_CONTRACT_ADDRESS = '0xf21ca0578f286a0ce5e9f43eab0387a9b7ee1b9ffd1f4634a772d415561fa0fd';
   
   constructor(
     private readonly web3Service: Web3Service,
@@ -234,15 +234,23 @@ export class PollingService implements OnModuleInit {
   /**
    * Map ticker symbols to token types supported by the mint/burn service
    */
-  private mapTickerToTokenType(ticker: string): 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD' | null {
+  private mapTickerToTokenType(ticker: string): 'LQD_NEW' | 'USDT_NEW' | 'USDC_NEW' | null {
     const upperTicker = ticker.toUpperCase();
-    const supportedTokens = ['USD', 'USDC', 'LQD', 'TSLA', 'AAPL', 'GOLD'];
     
-    if (supportedTokens.includes(upperTicker)) {
-      return upperTicker as 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD';
+    // Map ticker symbols to new token types
+    switch (upperTicker) {
+      case 'LQD':
+      case 'LQD_NEW':
+        return 'LQD_NEW';
+      case 'USDT':
+      case 'USDT_NEW':
+        return 'USDT_NEW';
+      case 'USDC':
+      case 'USDC_NEW':
+        return 'USDC_NEW'; 
+      default:
+        return null;
     }
-    
-    return null;
   }
 
 }
