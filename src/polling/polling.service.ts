@@ -48,12 +48,15 @@ export class PollingService implements OnModuleInit {
     this.logger.log('Polling for new order events started');
     this.logger.log('-------------------------');
     try {
-      // Fetch latest 5 buy order events
-      const buyOrderEvents = await this.web3Service.fetchBuyOrderEvents(5);
+      // Get event limit from environment variables (default to 1 if not set)
+      const eventLimit = parseInt(process.env.POLLING_EVENT_LIMIT || '1', 10);
+      
+      // Fetch latest buy order events
+      const buyOrderEvents = await this.web3Service.fetchBuyOrderEvents(eventLimit);
       this.logger.log(`Fetched ${buyOrderEvents.length} buy order events`);
 
-      // Fetch latest 5 sell order events
-      const sellOrderEvents = await this.web3Service.fetchSellOrderEvents(5);
+      // Fetch latest sell order events
+      const sellOrderEvents = await this.web3Service.fetchSellOrderEvents(eventLimit);
       this.logger.log(`Fetched ${sellOrderEvents.length} sell order events`);
 
       // Process buy orders
