@@ -2,14 +2,25 @@
 
 A NestJS-based backend service for interacting with the Aptos blockchain network. This application provides real-time event polling and monitoring capabilities for Aptos accounts and transactions.
 
+## 🌐 Live Deployment
+
+**TEE Deployed Application**: [https://92a7be451ddb4f83627f81b188f8137bba80a65d-8090.dstack-prod5.phala.network/](https://92a7be451ddb4f83627f81b188f8137bba80a65d-8090.dstack-prod5.phala.network/)
+
+The application is deployed on Phala's Trusted Execution Environment (TEE) infrastructure for enhanced security and privacy.
+
 ## 🚀 Features
 
 - **Aptos Blockchain Integration**: Built-in connection to Aptos Devnet using the official Aptos TypeScript SDK
-- **Real-time Event Polling**: Automated polling service that monitors Aptos account events every 10 seconds
+- **Real-time Event Polling**: Automated polling service that monitors Aptos account events every 30 seconds
+- **KYC Management System**: Complete KYC verification and status checking functionality
+- **Token Operations**: Mint and burn operations for multiple token types (LQD_NEW, USDT_NEW, USDC_NEW)
+- **Order Book Integration**: Real-time monitoring and processing of buy/sell order events
+- **Supabase Integration**: Database operations for persistent storage of order records
 - **Health Check Endpoint**: Monitor application and blockchain connection status
 - **Docker Support**: Ready-to-deploy Docker configuration with multi-stage builds
 - **TypeScript**: Full TypeScript support with proper type definitions
 - **Structured Logging**: Comprehensive logging with NestJS Logger
+- **TEE Deployment**: Secure deployment on Phala's Trusted Execution Environment
 
 ## 🏗️ Architecture
 
@@ -20,6 +31,7 @@ The application follows a modular NestJS architecture with the following core mo
 - **AppModule**: Main application module that orchestrates all other modules
 - **Web3Module**: Handles Aptos blockchain interactions and client management
 - **PollingModule**: Manages automated event polling and monitoring
+- **SupabaseModule**: Database integration module for persistent data storage
 
 ### Services
 
@@ -27,10 +39,13 @@ The application follows a modular NestJS architecture with the following core mo
   - Account information retrieval
   - Event fetching from transactions
   - Network connectivity monitoring
+  - Order event processing and formatting
   
 - **PollingService**: Scheduled service for continuous event monitoring
   - Runs every 10 seconds using cron jobs
   - Monitors specified Aptos accounts for new events
+  - Processes buy/sell order events
+  - Handles automated token operations based on order events
   - Extensible for custom event processing logic
 
 ## 📡 API Endpoints
@@ -39,6 +54,41 @@ The application follows a modular NestJS architecture with the following core mo
 - **GET** `/health`
   - Returns application status and Aptos network connectivity
   - Response includes network configuration and connection status
+  - Example response:
+    ```json
+    {
+      "status": "ok",
+      "aptos_connected": true,
+      "network": "devnet"
+    }
+    ```
+
+### KYC Management
+- **GET** `/kyc/status/:userAddress`
+  - Check KYC verification status for a specific user address
+  - Returns verification status and user information
+  - Example response:
+    ```json
+    {
+      "success": true,
+      "userAddress": "0x123...",
+      "isVerified": true
+    }
+    ```
+
+- **POST** `/kyc/verify`
+  - Verify a user's KYC status
+  - Body: `{ "userAddress": "0x123..." }`
+  - Returns transaction details and verification result
+  - Example response:
+    ```json
+    {
+      "success": true,
+      "transactionHash": "0xabc...",
+      "gasUsed": "1234",
+      "userAddress": "0x123..."
+    }
+    ```
 
 ### Default
 - **GET** `/`
@@ -99,18 +149,17 @@ docker-compose up -d
 ## 🧪 Testing
 
 ```bash
-# Run unit tests
-npm run test
+# Generate cryptographic keys for testing
+npm run generate:keys
 
-# Run tests with coverage
-npm run test:cov
+# Format code
+npm run format
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run end-to-end tests
-npm run test:e2e
+# Lint code
+npm run lint
 ```
+
+**Note**: Test scripts are configured but not yet implemented. The application includes key generation utilities for development purposes.
 
 ## 📦 Dependencies
 
