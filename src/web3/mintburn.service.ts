@@ -114,6 +114,7 @@ export class MintburnService {
    * Set KYC verification status for a user (Admin only)
    */
   async setUserVerification(userAddress: string, isVerified: boolean): Promise<TransactionResult> {
+    this.logger.log(`Setting KYC verification for ${userAddress}`);
     try {
 
       const payload: InputEntryFunctionData = {
