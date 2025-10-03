@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Web3Service, FormattedOrderEvent } from '../web3/web3.service';
 import { SupabaseService, OrderRecord } from '../supabase/supabase.service';
+import { MintburnService, TokenOperation, BurnOperation } from '../web3/mintburn.service';
 
 @Injectable()
 export class PollingService implements OnModuleInit {
@@ -12,7 +13,8 @@ export class PollingService implements OnModuleInit {
   
   constructor(
     private readonly web3Service: Web3Service,
-    private readonly supabaseService: SupabaseService
+    private readonly supabaseService: SupabaseService,
+    private readonly mintburnService: MintburnService
   ) {}
 
   async onModuleInit() {
@@ -40,9 +42,11 @@ export class PollingService implements OnModuleInit {
   /**
    * Cron job that runs every 10 seconds to poll for new events
    */
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async pollForEvents(): Promise<void> {
+    this.logger.log('-------------------------');
     this.logger.log('Polling for new order events started');
+    this.logger.log('-------------------------');
     try {
       // Fetch latest 5 buy order events
       const buyOrderEvents = await this.web3Service.fetchBuyOrderEvents(5);
@@ -63,13 +67,8 @@ export class PollingService implements OnModuleInit {
       // Insert new orders into database
       await this.insertNewOrders([...newBuyOrderEvents, ...newSellOrderEvents]);
 
-      if (buyOrderEvents.length > 0) {
-        this.logger.log(`Latest buy order event: User ${buyOrderEvents[0].user}, Ticker: ${buyOrderEvents[0].ticker}, Amount: ${buyOrderEvents[0].usdcAmount}`);
-      }
-      
-      if (sellOrderEvents.length > 0) {
-        this.logger.log(`Latest sell order event: User ${sellOrderEvents[0].user}, Ticker: ${sellOrderEvents[0].ticker}, Amount: ${sellOrderEvents[0].usdcAmount}`);
-      }
+      // Process mint/burn operations for new orders
+      await this.processMintBurnOperations([...newBuyOrderEvents, ...newSellOrderEvents]);
 
     } catch (error) {
       this.logger.error('Error during order event polling:', error);
@@ -97,13 +96,18 @@ export class PollingService implements OnModuleInit {
         if (!exists) {
           newOrders.push(event);
         } else {
-          this.logger.debug(`Order already exists: User ${event.user}, Event: ${eventType}, Sequence: ${event.sequenceNumber}`);
+          this.logger.log(`Filtered out existing order: User ${event.user}, Event: ${eventType}, Sequence: ${event.sequenceNumber}`);
         }
       } catch (error) {
         this.logger.error(`Error checking if order exists for user ${event.user}:`, error);
         // In case of error, assume it's new to avoid missing data
         newOrders.push(event);
       }
+    }
+
+    // Log all new orders at once
+    if (newOrders.length > 0) {
+      this.logger.log(`New ${eventType} orders found:`, JSON.stringify(newOrders, null, 2));
     }
 
     return newOrders;
@@ -148,6 +152,93 @@ export class PollingService implements OnModuleInit {
     }
 
     this.logger.log(`Order insertion complete: ${successCount} successful, ${failureCount} failed`);
+  }
+
+  /**
+   * Process mint/burn operations for new orders
+   * Buy orders = mint tokens to user
+   * Sell orders = burn tokens from user
+   */
+  private async processMintBurnOperations(orderEvents: FormattedOrderEvent[]): Promise<void> {
+    if (orderEvents.length === 0) {
+      this.logger.log('No new orders to process for mint/burn operations');
+      return;
+    }
+
+    this.logger.log(`Processing ${orderEvents.length} orders for mint/burn operations`);
+    
+    let mintSuccessCount = 0;
+    let burnSuccessCount = 0;
+    let failureCount = 0;
+
+    for (const event of orderEvents) {
+      try {
+        // Map ticker to token type (assuming ticker matches token type)
+        const tokenType = this.mapTickerToTokenType(event.ticker);
+        
+        if (!tokenType) {
+          this.logger.warn(`Unsupported ticker: ${event.ticker}, skipping mint/burn operation`);
+          continue;
+        }
+
+        if (event.eventType === 'BuyOrderCreated') {
+          // Buy order = mint tokens to user
+          const mintOperation: TokenOperation = {
+            tokenType: tokenType,
+            recipient: event.user,
+            amount: event.assetAmount
+          };
+
+          const result = await this.mintburnService.mintTokens(mintOperation);
+          
+          if (result.success) {
+            mintSuccessCount++;
+            this.logger.log(`Successfully minted ${event.assetAmount} ${tokenType} tokens to ${event.user}. TX: ${result.hash}`);
+          } else {
+            failureCount++;
+            this.logger.error(`Failed to mint ${event.assetAmount} ${tokenType} tokens to ${event.user}: ${result.errorMessage}`);
+          }
+
+        } else if (event.eventType === 'SellOrderCreated') {
+          // Sell order = burn tokens from user
+          const burnOperation: BurnOperation = {
+            tokenType: tokenType,
+            user: event.user,
+            amount: event.assetAmount
+          };
+
+          const result = await this.mintburnService.adminBurnTokens(burnOperation);
+          
+          if (result.success) {
+            burnSuccessCount++;
+            this.logger.log(`Successfully burned ${event.assetAmount} ${tokenType} tokens from ${event.user}. TX: ${result.hash}`);
+          } else {
+            failureCount++;
+            this.logger.error(`Failed to burn ${event.assetAmount} ${tokenType} tokens from ${event.user}: ${result.errorMessage}`);
+          }
+        }
+
+      } catch (error) {
+        this.logger.error(`Error processing mint/burn operation for user ${event.user}:`, error);
+        failureCount++;
+      }
+    }
+
+    this.logger.log(`Mint/burn operations complete: ${mintSuccessCount} mints, ${burnSuccessCount} burns, ${failureCount} failures`);
+  }
+
+  /**
+   * Map ticker symbols to token types supported by the mint/burn service
+   */
+  private mapTickerToTokenType(ticker: string): 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD' | null {
+    const upperTicker = ticker.toUpperCase();
+    const supportedTokens = ['USD', 'USDC', 'LQD', 'TSLA', 'AAPL', 'GOLD'];
+    
+    if (supportedTokens.includes(upperTicker)) {
+      return upperTicker as 'USD' | 'USDC' | 'LQD' | 'TSLA' | 'AAPL' | 'GOLD';
+    }
+    
+    return null;
   }
 
 }

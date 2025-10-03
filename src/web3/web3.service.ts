@@ -97,8 +97,6 @@ export class Web3Service {
     try {
       const url = `${this.BASE_URL}/accounts/${this.ACCOUNT_ADDRESS}/events/${this.BUY_ORDER_EVENTS_PATH}?limit=${limit}`;
       
-      this.logger.log(`Fetching buy order events from: ${url}`);
-      
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -108,10 +106,6 @@ export class Web3Service {
       
       // Format events
       const formattedEvents = rawEvents.map(event => this.formatOrderEvent(event, 'BuyOrderCreated'));
-      
-      // Log formatted events
-      this.logger.log('Formatted buy order events:');
-      this.logger.log(JSON.stringify(formattedEvents, null, 2));
       
       return formattedEvents;
     } catch (error) {
@@ -127,8 +121,6 @@ export class Web3Service {
     try {
       const url = `${this.BASE_URL}/accounts/${this.ACCOUNT_ADDRESS}/events/${this.SELL_ORDER_EVENTS_PATH}?limit=${limit}`;
       
-      this.logger.log(`Fetching sell order events from: ${url}`);
-      
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -138,10 +130,6 @@ export class Web3Service {
       
       // Format events
       const formattedEvents = rawEvents.map(event => this.formatOrderEvent(event, 'SellOrderCreated'));
-      
-      // Log formatted events
-      this.logger.log('Formatted sell order events:');
-      this.logger.log(JSON.stringify(formattedEvents, null, 2));
       
       return formattedEvents;
     } catch (error) {

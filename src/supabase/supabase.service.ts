@@ -95,7 +95,6 @@ export class SupabaseService {
         return false;
       }
 
-      this.logger.log(`Successfully inserted ${orderRecord.event_type} order for user ${orderRecord.user_address}`);
       return true;
     } catch (error) {
       this.logger.error('Error inserting order:', error);

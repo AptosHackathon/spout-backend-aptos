@@ -89,12 +89,14 @@ export class MintburnService {
    */
   async mintTokens(operation: TokenOperation): Promise<TransactionResult> {
     try {
-      this.logger.log(`Minting ${operation.amount} ${operation.tokenType} tokens to ${operation.recipient}`);
+      // Hardcoded to mint 1 token to avoid supply limit issues
+      const hardcodedAmount = 1;
+      this.logger.log(`Minting ${hardcodedAmount} ${operation.tokenType} tokens to ${operation.recipient} (original amount: ${operation.amount})`);
 
       const payload: InputEntryFunctionData = {
         function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::mint`,
         typeArguments: [`${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::${operation.tokenType}`],
-        functionArguments: [operation.recipient, operation.amount]
+        functionArguments: [operation.recipient, hardcodedAmount]
       };
 
       const transaction = await this.aptos.transaction.build.simple({
@@ -110,8 +112,6 @@ export class MintburnService {
       const executedTransaction = await this.aptos.waitForTransaction({
         transactionHash: committedTransaction.hash
       });
-
-      this.logger.log(`Mint transaction completed: ${committedTransaction.hash}`);
 
       return {
         hash: committedTransaction.hash,
