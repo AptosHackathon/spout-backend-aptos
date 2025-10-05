@@ -18,6 +18,7 @@ export interface BurnOperation {
   tokenType: 'LQD_NEW' | 'USDT_NEW' | 'USDC_NEW';
   user: string;
   amount: number;
+  usdcAmount: number;
 }
 
 export interface TransactionResult {
@@ -248,9 +249,9 @@ export class MintburnService {
       this.logger.log(`User ${operation.user} is KYC verified. Admin burning ${operation.amount} ${operation.tokenType} tokens`);
 
       const payload: InputEntryFunctionData = {
-        function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::admin_burn_from`,
+        function: `${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::admin_burn_and_mint`,
         typeArguments: [`${this.CONTRACT_ADDRESS}::${this.MODULE_NAME}::${operation.tokenType}`],
-        functionArguments: [operation.user, operation.amount]
+        functionArguments: [operation.user, operation.amount, operation.usdcAmount]
       };
 
       this.logger.log(`Burn payload: ${JSON.stringify(payload, null, 2)}`);

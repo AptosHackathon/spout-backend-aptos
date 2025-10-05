@@ -50,7 +50,7 @@ export class Web3Service {
 
   // Contract addresses and event endpoints
   private readonly ACCOUNT_ADDRESS = '0xc50c45c8cf451cf262827f258bba2254c94487311c326fa097ce30c39beda4ea';
-  private readonly CONTRACT_ADDRESS = '0xf21ca0578f286a0ce5e9f43eab0387a9b7ee1b9ffd1f4634a772d415561fa0fd';
+  private readonly CONTRACT_ADDRESS = '0x27220ac73da9851e597d9a016baa842b7c33b064f322da7ca24230ad5e606554';
   private readonly BUY_ORDER_EVENTS_PATH = `${this.CONTRACT_ADDRESS}::orders::OrderEvents/buy_order_events`;
   private readonly SELL_ORDER_EVENTS_PATH = `${this.CONTRACT_ADDRESS}::orders::OrderEvents/sell_order_events`;
   private readonly BASE_URL = 'https://fullnode.testnet.aptoslabs.com/v1';

@@ -9,7 +9,7 @@ export class PollingService implements OnModuleInit {
   private readonly logger = new Logger(PollingService.name);
   
   // Order contract address
-  private readonly ORDER_CONTRACT_ADDRESS = '0xf21ca0578f286a0ce5e9f43eab0387a9b7ee1b9ffd1f4634a772d415561fa0fd';
+  private readonly ORDER_CONTRACT_ADDRESS = '0x27220ac73da9851e597d9a016baa842b7c33b064f322da7ca24230ad5e606554';
   
   constructor(
     private readonly web3Service: Web3Service,
@@ -208,7 +208,8 @@ export class PollingService implements OnModuleInit {
           const burnOperation: BurnOperation = {
             tokenType: tokenType,
             user: event.user,
-            amount: event.assetAmount
+            amount: event.assetAmount,
+            usdcAmount: event.usdcAmount
           };
 
           const result = await this.mintburnService.adminBurnTokens(burnOperation);
